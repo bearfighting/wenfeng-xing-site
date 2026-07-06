@@ -2,6 +2,7 @@
 
 import fs from 'node:fs';
 import mdx from '@astrojs/mdx';
+import { unified } from '@astrojs/markdown-remark';
 import sitemap from '@astrojs/sitemap';
 import { defineConfig } from 'astro/config';
 import rehypeKatex from 'rehype-katex';
@@ -14,7 +15,18 @@ import tailwindcss from '@tailwindcss/vite';
 import expressiveCode from 'astro-expressive-code';
 
 const siteToml = parse(fs.readFileSync(new URL('./src/config/site.toml', import.meta.url), 'utf8'));
-const configuredMathRenderer = siteToml.config?.math?.render;
+const configuredMathRenderer =
+  typeof siteToml === 'object' &&
+  siteToml !== null &&
+  'config' in siteToml &&
+  typeof siteToml.config === 'object' &&
+  siteToml.config !== null &&
+  'math' in siteToml.config &&
+  typeof siteToml.config.math === 'object' &&
+  siteToml.config.math !== null &&
+  'render' in siteToml.config.math
+    ? siteToml.config.math.render
+    : undefined;
 const mathRenderer = configuredMathRenderer === 'mathjax' ? 'mathjax' : 'katex';
 
 const isGitHubActions = process.env.GITHUB_ACTIONS === 'true';
@@ -43,8 +55,10 @@ export default defineConfig({
   site: resolvedSite,
   base: resolvedBase,
   markdown: {
-    remarkPlugins: [remarkMath],
-    rehypePlugins: [mathRenderer === 'mathjax' ? rehypeMathjax : rehypeKatex],
+    processor: unified({
+      remarkPlugins: [remarkMath],
+      rehypePlugins: [mathRenderer === 'mathjax' ? rehypeMathjax : rehypeKatex],
+    }),
   },
   integrations: [expressiveCode(), mdx(), sitemap()],
 

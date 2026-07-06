@@ -104,15 +104,13 @@ function runSubset() {
   for (const { command, args: commandArgs } of commands) {
     const result = spawnSync(command, commandArgs, { stdio: 'inherit' });
     if (result.status === 0) {
-      return;
+      return true;
     }
 
     if (result.error && 'code' in result.error && result.error.code === 'ENOENT') continue;
   }
 
-  throw new Error(
-    'Unable to run fonttools. Install it with `python -m pip install --user fonttools brotli`, or make `pyftsubset` available on PATH.',
-  );
+  return false;
 }
 
 const chars = new Set<string>();
@@ -154,7 +152,16 @@ if (!existsSync(sourceFontPath)) {
   );
 }
 
-runSubset();
+if (runSubset()) {
+  console.log(`Generated ${outputFontPath} from ${sourceFontPath}.`);
+} else if (existsSync(outputFontPath)) {
+  console.warn(
+    `Unable to run fonttools, keeping existing subset font at ${outputFontPath}. Install it with \`python -m pip install --user fonttools brotli\`, or make \`pyftsubset\` available on PATH.`,
+  );
+} else {
+  console.warn(
+    `Unable to run fonttools, so ${outputFontPath} was not generated. The site will fall back to system CJK fonts. Install fonttools or commit a prebuilt subset font to remove this warning.`,
+  );
+}
 
 console.log(`Generated ${uiCharsPath} with ${uiChars.length} CJK UI characters.`);
-console.log(`Generated ${outputFontPath} from ${sourceFontPath}.`);

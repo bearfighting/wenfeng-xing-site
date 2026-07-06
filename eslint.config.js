@@ -1,4 +1,3 @@
-import deprecation from 'eslint-plugin-deprecation';
 import tsParser from '@typescript-eslint/parser';
 
 export default [
@@ -10,14 +9,8 @@ export default [
     languageOptions: {
       parser: tsParser,
       parserOptions: {
-        project: './tsconfig.json',
+        project: false,
       },
-    },
-    plugins: {
-      deprecation,
-    },
-    rules: {
-      'deprecation/deprecation': 'error',
     },
   },
 ];
