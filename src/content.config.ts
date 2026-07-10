@@ -28,6 +28,9 @@ const articleSchema = ({ image }: Parameters<CollectionSchemaFactory>[0]) =>
     description: z.string(),
     // Creation date. Accepts ISO 8601 strings and plain dates such as YYYY-MM-DD.
     date: z.coerce.date(),
+    locale: z.enum(['zh', 'en']).optional().default('zh'),
+    translationKey: z.string().optional().default(''),
+    translatedFrom: z.string().optional().default(''),
     draft: z.boolean().optional().default(false),
     heroImage: z.optional(contentImageSchema({ image })),
     showHeroImage: z.boolean().optional().default(true),
