@@ -1,30 +1,87 @@
 ---
 import Icon from '../Icon.astro';
+import type { CollectionEntry } from 'astro:content';
 
 interface DoingItem {
   text: string;
   mark: string;
+  href?: string;
 }
 
-const { items } = Astro.props as { items: DoingItem[] };
+interface Props {
+  items: DoingItem[];
+  latestBlogs?: CollectionEntry<'blog'>[];
+}
+
+const { items, latestBlogs = [] } = Astro.props as Props;
+const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
+const projectItems = items.slice(0, 3);
+const blogItems = latestBlogs.slice(0, 3);
+
+function withBase(href: string) {
+  if (href.startsWith('http') || href.startsWith('mailto:') || href.startsWith('#')) {
+    return href;
+  }
+
+  if (href === '/') {
+    return `${basePath}/` || '/';
+  }
+
+  return `${basePath}${href.startsWith('/') ? href : `/${href}`}`;
+}
 ---
 
 <article class="glass-card doing-card">
-  <h2><Icon name="calendar" /> Currently</h2>
-  <ul>
+  <section class="doing-section">
+    <h2><Icon name="calendar" /> Projects</h2>
+    <ul>
+      {
+        projectItems.map((item) => (
+          <li>
+            {item.href ? (
+              <a href={withBase(item.href)}>
+                <span>{item.text}</span>
+                <strong aria-hidden="true">{item.mark}</strong>
+              </a>
+            ) : (
+              <>
+                <span>{item.text}</span>
+                <strong aria-hidden="true">{item.mark}</strong>
+              </>
+            )}
+          </li>
+        ))
+      }
+    </ul>
+    <a class="section-link" href={withBase('/projects')}> View all projects </a>
+  </section>
+
+  <section class="doing-section">
+    <h2><Icon name="pen" /> Latest Blogs</h2>
     {
-      items.map((item) => (
-        <li>
-          <span>{item.text}</span>
-          <strong aria-hidden="true">{item.mark}</strong>
-        </li>
-      ))
+      blogItems.length > 0 ? (
+        <ul>
+          {blogItems.map((post, index) => (
+            <li>
+              <a href={withBase(`/blog/${post.id}/`)}>
+                <span>{post.data.title}</span>
+                <strong aria-hidden="true">{String(index + 1).padStart(2, '0')}</strong>
+              </a>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p class="empty-copy">Publish your first post and it will appear here.</p>
+      )
     }
-  </ul>
+    <a class="section-link" href={withBase('/blog')}> View all writing </a>
+  </section>
 </article>
 
 <style>
   .doing-card {
+    display: grid;
+    gap: 26px;
     padding: 24px 0 0;
     border-color: transparent;
     background: transparent;
@@ -46,6 +103,16 @@ const { items } = Astro.props as { items: DoingItem[] };
     font-size: 1.06rem;
   }
 
+  .doing-section {
+    display: grid;
+    gap: 12px;
+  }
+
+  .doing-section + .doing-section {
+    padding-top: 24px;
+    border-top: 1px solid var(--paper-line);
+  }
+
   h2 svg {
     width: 21px;
     height: 21px;
@@ -62,14 +129,8 @@ const { items } = Astro.props as { items: DoingItem[] };
 
   li {
     position: relative;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 32px;
-    gap: 12px;
-    align-items: center;
     padding: 14px 0 14px 18px;
     border-top: 1px solid var(--paper-line);
-    color: var(--paper-ink);
-    font-size: 0.98rem;
   }
 
   li::before {
@@ -82,8 +143,63 @@ const { items } = Astro.props as { items: DoingItem[] };
     content: '';
   }
 
+  li a,
+  li {
+    color: var(--paper-ink);
+    font-size: 0.98rem;
+  }
+
+  li a {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 36px;
+    gap: 14px;
+    align-items: center;
+    text-decoration: none;
+  }
+
+  li span {
+    display: block;
+    min-width: 0;
+    line-height: 1.5;
+  }
+
+  li a:hover span {
+    color: var(--paper-accent);
+  }
+
   strong {
     font-size: 0.82rem;
     text-align: right;
+  }
+
+  .section-link {
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+    margin-top: 2px;
+    padding: 6px 10px;
+    border: 1px solid var(--paper-line);
+    border-radius: 999px;
+    color: var(--paper-ink-soft);
+    font-family: var(--font-ui-label);
+    font-size: 0.74rem;
+    text-decoration: none;
+    transition:
+      color 180ms ease,
+      border-color 180ms ease,
+      background 180ms ease;
+  }
+
+  .section-link:hover {
+    border-color: var(--paper-line-strong);
+    background: var(--paper-control-hover);
+    color: var(--paper-accent);
+  }
+
+  .empty-copy {
+    margin: 0;
+    color: var(--paper-ink-soft);
+    font-size: 0.94rem;
+    line-height: 1.7;
   }
 </style>

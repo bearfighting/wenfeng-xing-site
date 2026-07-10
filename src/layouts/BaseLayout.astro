@@ -1,6 +1,7 @@
 ---
 import BaseHead from '../components/BaseHead.astro';
 import BlogTopNav from '../components/blog/BlogTopNav.astro';
+import Footer from '../components/Footer.astro';
 import FullFontWarmup from '../components/FullFontWarmup.astro';
 import ScrollToTopButton from '../components/ScrollToTopButton.astro';
 import { getThemePalette } from '../data/site';
@@ -21,8 +22,29 @@ const palette = await getThemePalette();
   </head>
   <body>
     <BlogTopNav />
-    <slot />
+    <main class="layout-main">
+      <slot />
+    </main>
+    <Footer />
     <ScrollToTopButton />
     <FullFontWarmup />
   </body>
 </html>
+
+<style>
+  :global(html) {
+    background: var(--paper-bg);
+  }
+
+  :global(body) {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--paper-bg);
+    color: var(--paper-ink);
+  }
+
+  .layout-main {
+    flex: 1 0 auto;
+  }
+</style>

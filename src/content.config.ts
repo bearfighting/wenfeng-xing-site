@@ -339,6 +339,7 @@ const siteConfig = defineCollection({
         z.object({
           text: z.string(),
           mark: z.string(),
+          href: z.string().optional(),
         }),
       ),
     }),
