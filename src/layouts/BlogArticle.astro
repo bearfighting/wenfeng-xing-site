@@ -15,7 +15,8 @@ import { sortByDateDesc } from '../utils/content-dates';
 import { getSeriesContext, slugifyGroupName } from '../utils/content-groups';
 import { buildTocTree, countTocItems } from '../utils/toc-tree';
 
-const { comments: rawComments } = await getSiteConfig();
+const siteConfig = await getSiteConfig();
+const { comments: rawComments, profile } = siteConfig;
 const comments = resolveCommentsConfig(rawComments);
 
 type SidebarConfig = {
@@ -35,6 +36,9 @@ interface Props {
       date: Date;
       heroImage?: ImageMetadata | string;
       showHeroImage?: boolean;
+      locale?: 'zh' | 'en';
+      translationKey?: string;
+      translatedFrom?: string;
       tags?: string[];
       categories?: string[];
       series?: string[];
@@ -131,12 +135,79 @@ const relatedPosts = sortByDateDesc(allBlogPosts.filter(({ id }) => id !== post.
 const hasRelatedPosts =
   shouldRenderSidebar && (sidebarConfig.relatedPosts ?? true) && relatedPosts.length > 0;
 const hasSidebar = shouldRenderSidebar && hasToc;
+const pageLocale = post.data.locale === 'zh' ? 'zh-CN' : 'en';
+const translationKey = 'translationKey' in post.data ? post.data.translationKey : '';
+const translatedFrom = 'translatedFrom' in post.data ? post.data.translatedFrom : '';
+const translationSeed = translationKey || translatedFrom;
+const collectionName = post.collection;
+const canonicalURL = new URL(Astro.url.pathname, Astro.site);
+const alternateEntries =
+  translationSeed && collectionName
+    ? await getCollection(collectionName as 'blog' | 'projects', ({ id, data }) => {
+        const relatedKey = ('translationKey' in data ? data.translationKey : '') || '';
+        const relatedFrom = ('translatedFrom' in data ? data.translatedFrom : '') || '';
+
+        return (
+          id !== post.id &&
+          !data.draft &&
+          (relatedKey === translationSeed || relatedFrom === translationSeed)
+        );
+      })
+    : [];
+const alternateLinks = [
+  ...alternateEntries.map((entry) => ({
+    href: new URL(
+      `${basePath}/${entry.collection === 'blog' ? 'blog' : 'projects'}/${entry.id}/`,
+      Astro.site,
+    ).toString(),
+    hreflang: entry.data.locale === 'zh' ? 'zh-CN' : 'en',
+  })),
+  ...(translationSeed
+    ? [
+        {
+          href: canonicalURL.toString(),
+          hreflang: pageLocale,
+        },
+      ]
+    : []),
+];
+const structuredData =
+  post.collection === 'projects'
+    ? {
+        '@context': 'https://schema.org',
+        '@type': 'SoftwareSourceCode',
+        name: title,
+        description,
+        url: canonicalURL.toString(),
+        codeRepository: 'links' in post.data ? post.data.links?.github || undefined : undefined,
+        programmingLanguage:
+          'stack' in post.data
+            ? post.data.stack.filter((item) =>
+                ['rust', 'typescript', 'javascript', 'python', 'go', 'postgres'].includes(
+                  item.toLowerCase(),
+                ),
+              )
+            : undefined,
+        author: {
+          '@type': 'Person',
+          name: profile.name,
+        },
+      }
+    : undefined;
 ---
 
 <!doctype html>
-<html lang="zh-CN" data-palette={palette}>
+<html lang={pageLocale} data-palette={palette}>
   <head>
-    <BaseHead title={title} description={description} />
+    <BaseHead
+      title={title}
+      description={description}
+      image={heroImage}
+      locale={post.data.locale}
+      alternates={alternateLinks}
+      publishedTime={date}
+      structuredData={structuredData}
+    />
     {
       comments.provider === 'waline' && comments.enabled && (
         <link rel="stylesheet" href="https://unpkg.com/@waline/client@v3/dist/waline.css" />

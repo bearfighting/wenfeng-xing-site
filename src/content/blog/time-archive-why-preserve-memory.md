@@ -7,6 +7,7 @@ translationKey: 'time-archive-why-preserve-memory'
 translatedFrom: ''
 draft: false
 sticky: false
+heroImage: ../../assets/og/time-archive.svg
 showHeroImage: false
 tags:
   - Time Archive

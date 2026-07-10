@@ -28,6 +28,20 @@ const configuredMathRenderer =
     ? siteToml.config.math.render
     : undefined;
 const mathRenderer = configuredMathRenderer === 'mathjax' ? 'mathjax' : 'katex';
+const configuredWebsite =
+  typeof siteToml === 'object' &&
+  siteToml !== null &&
+  'config' in siteToml &&
+  typeof siteToml.config === 'object' &&
+  siteToml.config !== null &&
+  'profile' in siteToml.config &&
+  typeof siteToml.config.profile === 'object' &&
+  siteToml.config.profile !== null &&
+  'website' in siteToml.config.profile &&
+  typeof siteToml.config.profile.website === 'string' &&
+  siteToml.config.profile.website.length > 0
+    ? siteToml.config.profile.website
+    : undefined;
 
 const isGitHubActions = process.env.GITHUB_ACTIONS === 'true';
 const customSite = process.env.SITE_URL;
@@ -45,7 +59,9 @@ const githubPagesSite =
     : undefined;
 
 const resolvedSite =
-  customSite || (isGitHubActions && githubPagesSite ? githubPagesSite : 'https://example.com');
+  customSite ||
+  configuredWebsite ||
+  (isGitHubActions && githubPagesSite ? githubPagesSite : 'https://example.com');
 
 const resolvedBase =
   customBase || (isGitHubActions && isProjectPage && repositoryName ? `/${repositoryName}` : '/');
