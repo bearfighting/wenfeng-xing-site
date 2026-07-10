@@ -1,4 +1,5 @@
 ---
+import { getCollection } from 'astro:content';
 import IntroCard from '../components/cards/IntroCard.astro';
 import NavigationCard from '../components/cards/NavigationCard.astro';
 import ProfileCard from '../components/cards/ProfileCard.astro';
@@ -7,8 +8,13 @@ import BlogHeatmap from '../components/widgets/BlogHeatmap.astro';
 import DoingCard from '../components/widgets/DoingCard.astro';
 import { getSiteConfig } from '../data/site';
 import BaseLayout from '../layouts/BaseLayout.astro';
+import { sortByDateDesc } from '../utils/content-dates';
 
 const { home, profile, site } = await getSiteConfig();
+const latestBlogs = sortByDateDesc(await getCollection('blog', ({ data }) => !data.draft)).slice(
+  0,
+  3,
+);
 ---
 
 <BaseLayout title={site.pageTitle} description={site.pageDescription}>
@@ -39,7 +45,7 @@ const { home, profile, site } = await getSiteConfig();
     </Fragment>
 
     <Fragment slot="recently">
-      <DoingCard items={home.doing} />
+      <DoingCard items={home.doing} latestBlogs={latestBlogs} />
     </Fragment>
   </DashboardFlow>
 </BaseLayout>

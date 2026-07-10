@@ -7,8 +7,17 @@ const { profile, site } = await getSiteConfig();
 ---
 
 <footer>
-  &copy; {today.getFullYear()}
-  {site.title}. {site.footerNote}
+  <p class="footer-line">
+    <span>&copy; {today.getFullYear()} {site.title}</span>
+    <span>{site.footerNote}</span>
+  </p>
+
+  <p class="footer-line footer-meta">
+    <span>Built and maintained by {profile.name}</span>
+    <span>For questions or collaboration:</span>
+    <a href={`mailto:${profile.email}`}>{profile.email}</a>
+  </p>
+
   <div class="social-links">
     <a href={profile.website} target="_blank" rel="noreferrer">
       <span class="sr-only">Open website</span>
@@ -26,16 +35,43 @@ const { profile, site } = await getSiteConfig();
 </footer>
 <style>
   footer {
+    display: grid;
+    gap: 0.6rem;
     padding: 3em 1em 6em;
     color: var(--paper-ink-faint);
     font-size: 0.88rem;
     text-align: center;
   }
+
+  .footer-line {
+    display: flex;
+    justify-content: center;
+    gap: 0.45rem;
+    flex-wrap: wrap;
+    margin: 0;
+    line-height: 1.7;
+  }
+
+  .footer-meta {
+    color: var(--paper-ink-soft);
+  }
+
+  .footer-meta a {
+    color: inherit;
+    text-decoration: none;
+    border-bottom: 1px solid color-mix(in srgb, var(--paper-ink-soft) 35%, transparent);
+  }
+
+  .footer-meta a:hover {
+    color: var(--paper-accent);
+    border-bottom-color: color-mix(in srgb, var(--paper-accent) 45%, transparent);
+  }
+
   .social-links {
     display: flex;
     justify-content: center;
     gap: 1em;
-    margin-top: 1em;
+    margin-top: 0.4em;
   }
   .social-links a {
     display: inline-grid;

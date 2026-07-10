@@ -194,11 +194,9 @@ icon = "mail"
 [[config.home.doing]]
 text = "Time Archive"
 mark = "01"
-
-[[config.home.doing]]
-text = "Financial Engine"
-mark = "02"
+href = "/projects/time-archive"
 
 [[config.home.doing]]
 text = "Personal Website"
-mark = "03"
+mark = "02"
+href = "/projects/personal-website"

@@ -37,7 +37,16 @@ const vibes = await Promise.all(
         scroll-behavior: smooth;
       }
 
+      body {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        background: var(--paper-bg);
+        color: var(--paper-ink);
+      }
+
       main {
+        flex: 1 0 auto;
         width: min(100%, var(--layout-shell-width));
         padding-top: 126px;
       }
