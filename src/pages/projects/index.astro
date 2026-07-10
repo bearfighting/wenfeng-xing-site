@@ -1,14 +1,10 @@
 ---
-import { getCollection, render } from 'astro:content';
-import FormattedDate from '../../components/FormattedDate.astro';
+import { getCollection, render, type CollectionEntry } from 'astro:content';
 import BlogArticle from '../../layouts/BlogArticle.astro';
-import { sortByDateDesc } from '../../utils/content-dates';
 
 const projectEntries = await getCollection('projects');
 const projectIndex = projectEntries.find((entry) => entry.id === 'index');
-const projects = sortByDateDesc(
-  projectEntries.filter((entry) => entry.id !== 'index' && !entry.data.draft),
-);
+const projects = projectEntries.filter((entry) => entry.id !== 'index' && !entry.data.draft);
 
 if (!projectIndex) {
   throw new Error('Missing src/content/projects/index.mdx content entry.');
@@ -16,7 +12,43 @@ if (!projectIndex) {
 
 const { Content, headings } = await render(projectIndex);
 
-const relatedProjects = projects;
+type ProjectEntry = CollectionEntry<'projects'>;
+type ProjectStage = ProjectEntry['data']['stage'];
+
+const stageMeta: Record<ProjectStage, { label: string; icon: string; description: string }> = {
+  active: {
+    label: 'Active',
+    icon: '🌱',
+    description: 'Long-term products and tools I am actively building.',
+  },
+  research: {
+    label: 'Research',
+    icon: '🔬',
+    description: 'Ideas under investigation, prototyping, or technical exploration.',
+  },
+  'open-source': {
+    label: 'Open Source',
+    icon: '📦',
+    description: 'Libraries, tools, and public code that support broader work.',
+  },
+  ideas: {
+    label: 'Ideas',
+    icon: '💡',
+    description: 'Future directions worth preserving before they are ready.',
+  },
+};
+
+const stageOrder: ProjectStage[] = ['active', 'research', 'open-source', 'ideas'];
+
+const groupedProjects = stageOrder
+  .map((stage) => ({
+    stage,
+    meta: stageMeta[stage],
+    projects: projects.filter((project) => (project.data.stage ?? 'active') === stage),
+  }))
+  .filter((group) => group.projects.length > 0);
+
+const roadmapProjects = projects.filter((project) => typeof project.data.progress === 'number');
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
 
@@ -34,38 +66,111 @@ function withBase(href: string) {
   headings={headings}
   sidebar={{ enable: false, ...projectIndex.data.sidebar }}
   headerVariant="archive"
-  headerKicker="Project shelf"
+  headerKicker="Long-term projects"
   contentFont="ui"
 >
   <Content />
 
   {
-    relatedProjects.length > 0 ? (
-      <section class="project-grid" aria-label="Projects">
-        {relatedProjects.map((project) => (
-          <a class="project-card" href={withBase(`/projects/${project.id}/`)}>
-            <span class="project-meta">
-              <FormattedDate date={project.data.date} />
-            </span>
-            <h2>{project.data.title}</h2>
-            <p>{project.data.description}</p>
-            {project.data.tags.length > 0 && (
-              <span class="project-tags" aria-label="Project tags">
-                {project.data.tags.slice(0, 3).map((tag) => (
-                  <small>{tag}</small>
-                ))}
-              </span>
-            )}
-          </a>
+    roadmapProjects.length > 0 && (
+      <section class="roadmap-section" aria-labelledby="project-roadmap-title">
+        <div class="section-heading">
+          <p>Roadmap</p>
+          <h2 id="project-roadmap-title">Progress across the lab</h2>
+        </div>
+
+        <div class="roadmap-list">
+          {roadmapProjects.map((project) => (
+            <a class="roadmap-item" href={withBase(`/projects/${project.id}/`)}>
+              <div class="roadmap-copy">
+                <strong>{project.data.title}</strong>
+                <span>{project.data.progress}%</span>
+              </div>
+              <div class="roadmap-bar" aria-hidden="true">
+                <i style={`width: ${project.data.progress}%`} />
+              </div>
+            </a>
+          ))}
+        </div>
+      </section>
+    )
+  }
+
+  {
+    groupedProjects.length > 0 ? (
+      <section class="project-stage-list" aria-label="Project groups">
+        {groupedProjects.map((group) => (
+          <section class="project-stage" aria-labelledby={`stage-${group.stage}`}>
+            <div class="section-heading">
+              <p>
+                <span aria-hidden="true">{group.meta.icon}</span> {group.meta.label}
+              </p>
+              <h2 id={`stage-${group.stage}`}>{group.meta.description}</h2>
+            </div>
+
+            <div class="project-grid">
+              {group.projects.map((project) => (
+                <article class="project-card">
+                  <div class="project-card-top">
+                    <span class="project-stage-chip">{project.data.status}</span>
+                    {project.data.started && <small>Started {project.data.started}</small>}
+                  </div>
+
+                  <div class="project-copy">
+                    <h3>{project.data.title}</h3>
+                    <p>{project.data.description}</p>
+                  </div>
+
+                  <dl class="project-meta">
+                    <div>
+                      <dt>Status</dt>
+                      <dd>{project.data.status}</dd>
+                    </div>
+                    {project.data.stack.length > 0 && (
+                      <div>
+                        <dt>Stack</dt>
+                        <dd>{project.data.stack.join(' • ')}</dd>
+                      </div>
+                    )}
+                  </dl>
+
+                  {project.data.focus.length > 0 && (
+                    <div class="project-focus">
+                      <strong>Current Focus</strong>
+                      <ul>
+                        {project.data.focus.slice(0, 3).map((item) => (
+                          <li>{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  <div class="project-actions">
+                    {project.data.links.website && (
+                      <a href={project.data.links.website} target="_blank" rel="noreferrer">
+                        Website
+                      </a>
+                    )}
+                    {project.data.links.github && (
+                      <a href={project.data.links.github} target="_blank" rel="noreferrer">
+                        GitHub
+                      </a>
+                    )}
+                    <a href={withBase(`/projects/${project.id}/`)}>Read More</a>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
         ))}
       </section>
     ) : (
       <section class="project-empty" aria-label="Projects empty state">
         <span aria-hidden="true">01</span>
-        <h2>Projects are being collected.</h2>
+        <h2>The lab is being assembled.</h2>
         <p>
-          The route is ready; draft entries stay private until they are marked publishable in the
-          content collection.
+          The structure is ready for long-term products, research tracks, open-source tools, and
+          future ideas.
         </p>
       </section>
     )
@@ -73,24 +178,86 @@ function withBase(href: string) {
 </BlogArticle>
 
 <style>
-  .project-meta,
-  .project-empty span,
-  .project-tags small {
-    font-family: var(--font-ui-label);
+  .section-heading {
+    display: grid;
+    gap: 8px;
+    margin: 36px 0 18px;
   }
 
-  .project-card p,
-  .project-empty p {
+  .section-heading p {
     margin: 0;
+    color: var(--paper-accent);
+    font-family: var(--font-ui-label);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .section-heading h2 {
+    margin: 0;
+    color: var(--paper-ink);
+    font-size: clamp(1.2rem, 2vw, 1.6rem);
+    line-height: 1.35;
+  }
+
+  .roadmap-list {
+    display: grid;
+    gap: 12px;
+  }
+
+  .roadmap-item {
+    display: grid;
+    gap: 8px;
+    padding: 14px 16px;
+    border: 1px solid var(--paper-line);
+    border-radius: 8px;
+    color: var(--paper-ink);
+    text-decoration: none;
+    background: var(--paper-surface);
+  }
+
+  .roadmap-copy {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    align-items: center;
+  }
+
+  .roadmap-copy strong {
+    font-size: 0.98rem;
+  }
+
+  .roadmap-copy span {
     color: var(--paper-ink-soft);
-    line-height: 1.78;
+    font-family: var(--font-ui-label);
+    font-size: 0.82rem;
+  }
+
+  .roadmap-bar {
+    height: 8px;
+    border-radius: 999px;
+    background: var(--paper-line);
+    overflow: hidden;
+  }
+
+  .roadmap-bar i {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--paper-accent);
+  }
+
+  .project-stage-list {
+    display: grid;
+    gap: 18px;
+    margin-top: 8px;
   }
 
   .project-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 16px;
-    margin-top: 34px;
   }
 
   .project-card,
@@ -103,56 +270,126 @@ function withBase(href: string) {
 
   .project-card {
     display: grid;
-    gap: 12px;
-    min-height: 210px;
+    gap: 16px;
     padding: 22px;
-    color: var(--paper-ink);
-    text-decoration: none;
-    transition:
-      transform 180ms ease,
-      border-color 180ms ease,
-      background 180ms ease;
   }
 
-  .project-card:hover {
-    border-color: var(--paper-line-strong);
-    background: var(--paper-control-hover);
-    transform: translateY(-1px);
+  .project-card-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: center;
   }
 
-  .project-meta,
-  .project-empty span {
+  .project-stage-chip,
+  .project-card-top small,
+  .project-meta dt,
+  .project-actions a {
+    font-family: var(--font-ui-label);
+  }
+
+  .project-stage-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 9px;
+    border-radius: 999px;
+    background: var(--paper-control);
+    color: var(--paper-accent);
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .project-card-top small {
     color: var(--paper-ink-faint);
-    font-size: 0.76rem;
-    font-weight: 600;
-    letter-spacing: 0.08em;
+    font-size: 0.75rem;
   }
 
-  .project-card h2,
-  .project-empty h2 {
+  .project-copy {
+    display: grid;
+    gap: 10px;
+  }
+
+  .project-copy h3 {
     margin: 0;
     color: var(--paper-ink);
-    font-size: 1.32rem;
-    line-height: 1.28;
+    font-size: 1.3rem;
+    line-height: 1.2;
   }
 
-  .project-card p {
-    max-width: 58ch;
+  .project-copy p,
+  .project-empty p {
+    margin: 0;
+    color: var(--paper-ink-soft);
+    line-height: 1.75;
   }
 
-  .project-tags {
+  .project-meta {
+    display: grid;
+    gap: 10px;
+    margin: 0;
+  }
+
+  .project-meta div {
+    display: grid;
+    gap: 2px;
+  }
+
+  .project-meta dt {
+    color: var(--paper-ink-faint);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .project-meta dd {
+    margin: 0;
+    color: var(--paper-ink);
+    font-size: 0.92rem;
+    line-height: 1.5;
+  }
+
+  .project-focus {
+    display: grid;
+    gap: 8px;
+  }
+
+  .project-focus strong {
+    color: var(--paper-ink);
+    font-size: 0.84rem;
+  }
+
+  .project-focus ul {
+    display: grid;
+    gap: 6px;
+    margin: 0;
+    padding-left: 18px;
+    color: var(--paper-ink-soft);
+  }
+
+  .project-actions {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
-    align-self: end;
+    margin-top: auto;
   }
 
-  .project-tags small {
-    padding: 3px 8px;
+  .project-actions a {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 10px;
     border: 1px solid var(--paper-line);
     border-radius: 999px;
-    color: var(--paper-ink-soft);
-    font-size: 0.74rem;
+    color: var(--paper-ink);
+    font-size: 0.75rem;
+    text-decoration: none;
+  }
+
+  .project-actions a:hover,
+  .roadmap-item:hover {
+    border-color: var(--paper-line-strong);
+    background: var(--paper-control-hover);
   }
 
   .project-empty {
@@ -163,6 +400,21 @@ function withBase(href: string) {
     padding: 24px;
   }
 
+  .project-empty span {
+    color: var(--paper-ink-faint);
+    font-family: var(--font-ui-label);
+    font-size: 0.76rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+  }
+
+  .project-empty h2 {
+    margin: 0;
+    color: var(--paper-ink);
+    font-size: 1.32rem;
+    line-height: 1.28;
+  }
+
   @media (max-width: 720px) {
     .project-grid {
       grid-template-columns: 1fr;
@@ -171,6 +423,12 @@ function withBase(href: string) {
     .project-card,
     .project-empty {
       padding: 20px;
+    }
+
+    .project-card-top,
+    .roadmap-copy {
+      align-items: flex-start;
+      flex-direction: column;
     }
   }
 </style>

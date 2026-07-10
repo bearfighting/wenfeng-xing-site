@@ -21,6 +21,217 @@ const { Content, headings } = await render(project);
   post={project}
   headings={headings}
   sidebar={{ enable: false, ...project.data.sidebar }}
+  headerVariant="archive"
+  headerKicker="Project journey"
+  contentFont="ui"
 >
+  <section class="project-overview" aria-label="Project overview">
+    <div class="overview-grid">
+      <div>
+        <span>Status</span>
+        <strong>{project.data.status}</strong>
+      </div>
+      {
+        project.data.started && (
+          <div>
+            <span>Started</span>
+            <strong>{project.data.started}</strong>
+          </div>
+        )
+      }
+      <div>
+        <span>Stage</span>
+        <strong>{project.data.stage}</strong>
+      </div>
+      {
+        typeof project.data.progress === 'number' && (
+          <div>
+            <span>Progress</span>
+            <strong>{project.data.progress}%</strong>
+          </div>
+        )
+      }
+    </div>
+
+    {
+      typeof project.data.progress === 'number' && (
+        <div class="progress-bar" aria-hidden="true">
+          <i style={`width: ${project.data.progress}%`} />
+        </div>
+      )
+    }
+
+    {
+      (project.data.why || project.data.goal || project.data.focus.length > 0) && (
+        <div class="overview-notes">
+          {project.data.why && (
+            <div>
+              <h2>Why</h2>
+              <p>{project.data.why}</p>
+            </div>
+          )}
+          {project.data.goal && (
+            <div>
+              <h2>Goal</h2>
+              <p>{project.data.goal}</p>
+            </div>
+          )}
+          {project.data.focus.length > 0 && (
+            <div>
+              <h2>Current Focus</h2>
+              <ul>
+                {project.data.focus.map((item) => (
+                  <li>{item}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )
+    }
+
+    {
+      (project.data.stack.length > 0 ||
+        project.data.links.website ||
+        project.data.links.github) && (
+        <div class="overview-footer">
+          {project.data.stack.length > 0 && (
+            <div class="stack-list" aria-label="Project stack">
+              {project.data.stack.map((item) => (
+                <span>{item}</span>
+              ))}
+            </div>
+          )}
+          <div class="overview-links">
+            {project.data.links.website && (
+              <a href={project.data.links.website} target="_blank" rel="noreferrer">
+                Website
+              </a>
+            )}
+            {project.data.links.github && (
+              <a href={project.data.links.github} target="_blank" rel="noreferrer">
+                GitHub
+              </a>
+            )}
+          </div>
+        </div>
+      )
+    }
+  </section>
+
   <Content />
 </BlogArticle>
+
+<style>
+  .project-overview {
+    display: grid;
+    gap: 18px;
+    margin-bottom: 26px;
+    padding: 20px;
+    border: 1px solid var(--paper-line);
+    border-radius: 10px;
+    background: var(--paper-surface);
+    box-shadow: var(--paper-shadow);
+  }
+
+  .overview-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+  }
+
+  .overview-grid div,
+  .overview-notes div {
+    display: grid;
+    gap: 6px;
+  }
+
+  .overview-grid span,
+  .stack-list span,
+  .overview-links a {
+    font-family: var(--font-ui-label);
+  }
+
+  .overview-grid span {
+    color: var(--paper-ink-faint);
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .overview-grid strong {
+    color: var(--paper-ink);
+    font-size: 0.96rem;
+    line-height: 1.4;
+  }
+
+  .progress-bar {
+    height: 10px;
+    border-radius: 999px;
+    background: var(--paper-line);
+    overflow: hidden;
+  }
+
+  .progress-bar i {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--paper-accent);
+  }
+
+  .overview-notes {
+    display: grid;
+    gap: 14px;
+  }
+
+  .overview-notes h2 {
+    margin: 0;
+    color: var(--paper-ink);
+    font-size: 0.96rem;
+  }
+
+  .overview-notes p,
+  .overview-notes ul {
+    margin: 0;
+    color: var(--paper-ink-soft);
+    line-height: 1.72;
+  }
+
+  .overview-notes ul {
+    padding-left: 18px;
+  }
+
+  .overview-footer {
+    display: grid;
+    gap: 12px;
+  }
+
+  .stack-list,
+  .overview-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .stack-list span,
+  .overview-links a {
+    display: inline-flex;
+    align-items: center;
+    padding: 5px 10px;
+    border: 1px solid var(--paper-line);
+    border-radius: 999px;
+    color: var(--paper-ink);
+    font-size: 0.75rem;
+    text-decoration: none;
+  }
+
+  .overview-links a:hover {
+    background: var(--paper-control-hover);
+  }
+
+  @media (max-width: 720px) {
+    .overview-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+</style>

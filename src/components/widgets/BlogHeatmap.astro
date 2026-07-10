@@ -10,6 +10,10 @@ interface Props {
   excludeDraft?: boolean;
   dateArchiveBaseHref?: string;
   startDate?: Date | string | null;
+  customStats?: {
+    value: string;
+    label: string;
+  }[];
 }
 
 const {
@@ -19,6 +23,7 @@ const {
   excludeDraft = true,
   dateArchiveBaseHref,
   startDate,
+  customStats = [],
 } = Astro.props;
 const posts = await getCollection('blog', ({ data }) => !excludeDraft || !data.draft);
 const heatmap = createRecentBlogHeatmap(posts, weeks, latestCount, startDate);
@@ -30,6 +35,13 @@ const formatDate = new Intl.DateTimeFormat('en', {
   day: 'numeric',
   year: 'numeric',
 });
+const stats = customStats.length
+  ? customStats
+  : [
+      { value: String(heatmap.totalPosts), label: 'Total posts' },
+      { value: String(heatmap.activeDays), label: 'Active days' },
+      { value: String(heatmap.currentStreak), label: 'Day streak' },
+    ];
 
 function getPostLabel(count: number) {
   return `${count} ${count === 1 ? 'post' : 'posts'}`;
@@ -55,18 +67,14 @@ function getDayHref(day: HeatmapDay) {
 
 <article class="glass-card heatmap-card">
   <div class="stats-row">
-    <div class="stat-item">
-      <strong>{heatmap.totalPosts}</strong>
-      <span>Total posts</span>
-    </div>
-    <div class="stat-item">
-      <strong>{heatmap.activeDays}</strong>
-      <span>Active days</span>
-    </div>
-    <div class="stat-item">
-      <strong>{heatmap.currentStreak}</strong>
-      <span>Day streak</span>
-    </div>
+    {
+      stats.map((stat) => (
+        <div class="stat-item">
+          <strong>{stat.value}</strong>
+          <span>{stat.label}</span>
+        </div>
+      ))
+    }
   </div>
 
   {

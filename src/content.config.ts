@@ -43,6 +43,30 @@ const blogArticleSchema = (context: Parameters<CollectionSchemaFactory>[0]) =>
     sticky: z.union([z.boolean(), z.number().positive()]).optional().default(false),
   });
 
+const projectStageSchema = z.enum(['active', 'research', 'open-source', 'ideas']);
+
+const projectArticleSchema = (context: Parameters<CollectionSchemaFactory>[0]) =>
+  articleSchema(context).extend({
+    stage: projectStageSchema.optional().default('active'),
+    status: z.string().optional().default('Building'),
+    started: z.string().optional().default(''),
+    progress: z.number().min(0).max(100).optional(),
+    stack: z.array(z.string()).optional().default([]),
+    focus: z.array(z.string()).optional().default([]),
+    goal: z.string().optional().default(''),
+    why: z.string().optional().default(''),
+    links: z
+      .object({
+        website: z.string().optional().default(''),
+        github: z.string().optional().default(''),
+      })
+      .optional()
+      .default({
+        website: '',
+        github: '',
+      }),
+  });
+
 const contentSource = process.env.NAVFOLIO_CONTENT_SOURCE === 'docs' ? 'docs' : 'content';
 const contentBase = contentSource === 'docs' ? './src/docs' : './src/content';
 
@@ -286,6 +310,15 @@ const siteConfig = defineCollection({
           excludeDraft: z.boolean().optional().default(true),
           startDate: z.string().optional().default(''),
           dateArchiveBaseHref: z.string().optional().default(''),
+          stats: z
+            .array(
+              z.object({
+                value: z.string(),
+                label: z.string(),
+              }),
+            )
+            .optional()
+            .default([]),
         })
         .optional()
         .default({
@@ -295,6 +328,7 @@ const siteConfig = defineCollection({
           excludeDraft: true,
           startDate: '',
           dateArchiveBaseHref: '',
+          stats: [],
         }),
       navigation: z.array(navigationItemSchema),
       connect: z.array(linkSchema.required({ icon: true })),
@@ -321,7 +355,7 @@ const about = defineCollection({
 
 const projects = defineCollection({
   loader: glob({ base: `${contentBase}/projects`, pattern: '**/*.{md,mdx}' }),
-  schema: articleSchema,
+  schema: projectArticleSchema,
 });
 
 const vibe = defineCollection({

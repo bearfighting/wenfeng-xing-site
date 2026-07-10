@@ -1,7 +1,7 @@
 {
-  "name": "navfolio",
-  "short_name": "navfolio",
-  "description": "A personal navigation portfolio starter built with Astro.",
+  "name": "Wenfeng Xing",
+  "short_name": "Wenfeng",
+  "description": "Projects, writing, and experiments about software, finance, and long-term thinking.",
   "start_url": ".",
   "display": "standalone",
   "background_color": "#ffffff",

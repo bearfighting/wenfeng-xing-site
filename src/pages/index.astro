@@ -30,6 +30,7 @@ const { home, profile, site } = await getSiteConfig();
         excludeDraft={home.latest.excludeDraft}
         startDate={home.latest.startDate || null}
         dateArchiveBaseHref={home.latest.dateArchiveBaseHref || undefined}
+        customStats={home.latest.stats}
       />
     </Fragment>
 

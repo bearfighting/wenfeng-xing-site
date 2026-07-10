@@ -20,9 +20,9 @@ const { profile } = Astro.props as { profile: Profile };
   <div class="avatar-wrap">
     <img
       src={profile.avatar}
-      alt={`${profile.name} GitHub avatar`}
-      width="176"
-      height="176"
+      alt={`${profile.name} profile image`}
+      width="136"
+      height="136"
       loading="eager"
     />
   </div>
@@ -47,8 +47,8 @@ const { profile } = Astro.props as { profile: Profile };
 
   .avatar-wrap {
     position: relative;
-    width: 176px;
-    height: 176px;
+    width: 136px;
+    height: 136px;
     margin: 0 0 18px auto;
     padding: 0;
     border-radius: 50%;
@@ -59,7 +59,7 @@ const { profile } = Astro.props as { profile: Profile };
   .avatar-wrap img {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
     border-radius: inherit;
   }
 
