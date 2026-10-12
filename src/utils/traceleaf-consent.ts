@@ -6,6 +6,8 @@ const endpoint = import.meta.env.PUBLIC_TRACELEAF_ENDPOINT?.trim();
 const ingestKey = import.meta.env.PUBLIC_TRACELEAF_INGEST_KEY?.trim();
 
 let analytics: Analytics | undefined;
+let configurationLogged = false;
+let lastLoggedConsent: 'granted' | 'denied' | null | undefined;
 
 function readConsent(): 'granted' | 'denied' | null {
   try {
@@ -25,22 +27,47 @@ function saveConsent(value: 'granted' | 'denied') {
 }
 
 function startAnalytics() {
-  if (!siteId || !endpoint || !ingestKey) return;
+  if (!siteId || !endpoint || !ingestKey) {
+    console.warn('[Traceleaf] Cannot initialize: one or more public settings are missing.', {
+      siteId: Boolean(siteId),
+      endpoint: Boolean(endpoint),
+      ingestKey: Boolean(ingestKey),
+    });
+    return;
+  }
   if (analytics) {
     analytics.setConsent('granted');
+    console.info('[Traceleaf] Consent granted on the existing analytics instance.');
     return;
   }
 
+  console.info('[Traceleaf] Initializing browser analytics.', {
+    navigationApiAvailable: 'navigation' in window,
+  });
   analytics = createBrowserAnalytics({
     siteId,
     endpoint,
     ingestKey,
     consent: 'granted',
-    onError: (error) => console.warn('[Traceleaf] Analytics delivery failed', error),
+    onNavigation: (event) => {
+      console.info('[Traceleaf] Navigation observed.', { navigationType: event.navigationType });
+    },
+    onError: (error) => console.error('[Traceleaf] Analytics reported an error.', error),
+  });
+  console.info('[Traceleaf] Browser analytics instance created.', {
+    consent: analytics.getConsent(),
   });
 }
 
 export function mountTraceleafConsent() {
+  if (!configurationLogged) {
+    configurationLogged = true;
+    console.info('[Traceleaf] Public configuration status.', {
+      siteId: Boolean(siteId),
+      endpoint: Boolean(endpoint),
+      ingestKey: Boolean(ingestKey),
+    });
+  }
   if (!siteId || !endpoint || !ingestKey) return;
   if (document.querySelector('[data-traceleaf-consent-root]')) return;
 
@@ -77,23 +104,32 @@ export function mountTraceleafConsent() {
 
   const panel = root.querySelector<HTMLElement>('[data-consent-panel]')!;
   const currentConsent = readConsent();
+  if (lastLoggedConsent !== currentConsent) {
+    lastLoggedConsent = currentConsent;
+    console.info('[Traceleaf] Stored consent state.', { consent: currentConsent ?? 'unset' });
+  }
   if (currentConsent === 'granted') startAnalytics();
   root.dataset.settled = String(currentConsent !== null);
   panel.hidden = currentConsent !== null;
 
   root.querySelector('[data-consent-grant]')?.addEventListener('click', () => {
+    console.info('[Traceleaf] Visitor granted analytics consent.');
     saveConsent('granted');
+    lastLoggedConsent = 'granted';
     root.dataset.settled = 'true';
     panel.hidden = true;
     startAnalytics();
   });
   root.querySelector('[data-consent-deny]')?.addEventListener('click', () => {
+    console.info('[Traceleaf] Visitor denied analytics consent.');
     saveConsent('denied');
+    lastLoggedConsent = 'denied';
     analytics?.setConsent('denied');
     root.dataset.settled = 'true';
     panel.hidden = true;
   });
   root.querySelector('[data-consent-settings]')?.addEventListener('click', () => {
     panel.hidden = !panel.hidden;
+    console.info('[Traceleaf] Consent settings toggled.', { open: !panel.hidden });
   });
 }
