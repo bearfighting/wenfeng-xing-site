@@ -96,6 +96,12 @@ const structuredDataPayload = structuredData ?? defaultStructuredData;
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <ClientRouter />
+<script>
+  import { mountTraceleafConsent } from '../utils/traceleaf-consent';
+
+  mountTraceleafConsent();
+  document.addEventListener('astro:page-load', mountTraceleafConsent);
+</script>
 <script is:inline>
   (() => {
     const storageKey = 'navfolio-theme';

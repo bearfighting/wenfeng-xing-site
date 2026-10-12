@@ -138,6 +138,18 @@ bun run vibe:new today-note
 
 配置结构由 `src/content.config.ts` 校验，字段不合法时构建会直接报错。
 
+## 访问统计
+
+本站使用 Traceleaf Browser SDK 1.0.0。SDK tarball 保存在仓库根目录，安装依赖时会通过 `@traceleaf/browser` 引用。配置 `.env` 中的公开变量（示例见 `.env.example`）：
+
+```sh
+PUBLIC_TRACELEAF_SITE_ID=site_xxx
+PUBLIC_TRACELEAF_ENDPOINT=https://collector.example.com/v1/events
+PUBLIC_TRACELEAF_INGEST_KEY=your-site-ingest-key
+```
+
+这些 `PUBLIC_` 变量会进入浏览器构建产物，适合站点 ID、采集地址和浏览器 Ingest Key；不要放数据库密码或 Dashboard 管理 token。访客第一次访问会看到统计同意提示。SDK 默认不采集；只有选择“同意并启用”后，才会在浏览器本地保存随机访客标识以关联回访，并发送页面浏览、来源、浏览器与设备信息及 Web Vitals。选择会保存在浏览器本地，可通过“统计设置”修改。修改环境变量后需要重新构建并部署。
+
 ## 部署
 
 这是一个静态站点，构建输出在 `dist/`，可以部署到：
